@@ -1,0 +1,63 @@
+#!/bin/sh
+
+## System
+lastfile=~/etc/latest-sync
+touch $lastfile
+last=$(cat $lastfile)
+now=$(date -u +%s)
+if (( last == 0 || (now - last) >= (7 * 24 * 60 * 60) )) # slow system, give it a week between syncs
+then
+	echo '>> Updating repositories'
+	doas emerge --sync \
+	&& echo $now > $lastfile
+else
+	echo '>> Skipping repository update'
+fi
+
+echo '>> Updating Portage'
+doas emerge --update --oneshot sys-apps/portage
+
+echo '>> Updating packages'
+doas emerge --update --deep --newuse @world
+
+echo '>> Removing orphaned packages'
+doas emerge --depclean --verbose n
+
+echo '>> Updating package list'
+list=~/etc/packages.list
+cat /var/lib/portage/world > $list{new}
+cmp -s $list{new} $list || mv -f $list{new} $list
+rm -f $list{new}
+
+## Rust
+if which rustup > /dev/null 2>&1
+then
+	echo '>> Updating rust'
+	rustup update
+fi
+
+## Python
+python=$(which python python3 python2 2> /dev/null | head -1 | sed 's:.*/::')
+if [[ -n $python ]]
+then
+	upgrade='install --user --upgrade --upgrade-strategy eager --use-pep517'
+
+	echo '>> Ensuring that pip is installed'
+	$python -m ensurepip --user --default-pip
+
+	echo '>> Updating pip'
+	$python -m pip $upgrade pip
+
+	echo '>> Updating Python packages'
+	$python -m pip list --outdated --format freeze --not-required \
+	| sed 's/==.*//' | sort -u | xargs -r $python -m pip $upgrade
+fi
+
+## Other
+if [[ -d $0.d ]]
+then
+	for f in $0.d/*.sh
+	do
+		[[ -r $f && -x $f ]] && . $f
+	done
+fi

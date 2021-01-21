@@ -3,9 +3,9 @@
 ## System
 lastfile=~/etc/latest-sync
 touch $lastfile
-last=$(cat $lastfile)
+read -r last < $lastfile
 now=$(date -u +%s)
-if (( last == 0 || (now - last) >= (7 * 24 * 60 * 60) )) # slow system, give it a week between syncs
+if [ -z "$last" -o $((now - last)) -ge $((7 * 24 * 60 * 60)) ] # slow system, wait a week between syncs
 then
 	echo '>> Updating repositories'
 	doas emerge --sync \

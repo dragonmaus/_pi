@@ -50,6 +50,8 @@ then
 		print -n '\001\r'
 		case "$TERM" in
 		(linux|linux-*)
+			;;
+		(*)
 			print -n '\001\e];'
 			print -n '$HOSTNAME'
 			print -n ' '

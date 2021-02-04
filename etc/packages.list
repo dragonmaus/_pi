@@ -13,6 +13,7 @@ dev-util/redo
 dev-vcs/git
 media-gfx/qrencode
 net-misc/openntpd
+net-p2p/syncthing
 sci-mathematics/calc
 sys-kernel/raspberrypi-image
 sys-kernel/raspberrypi-sources
